@@ -20,6 +20,7 @@ interface QuizState{
   currentQuestion:number;
   userAnswer:string | null ;
   finish:boolean;
+  optionSelected:{};
 }
 
 class Quiz extends Component<{},QuizState>{
@@ -34,6 +35,7 @@ class Quiz extends Component<{},QuizState>{
       currentQuestion:0,
       userAnswer:null,
       finish:false,
+      optionSelected:{},
     }
   };
 
@@ -71,10 +73,15 @@ class Quiz extends Component<{},QuizState>{
           .replace(/(&amp\;)/g, '"');
   }
 
+  handleOption=(currentQuestion:number,userAnswer:string)=>{
+    
+    localStorage.setItem(JSON.stringify(currentQuestion),userAnswer)
+  };
+
   verifyAnswer(selectedAnswer:string){
     this.setState({userAnswer:selectedAnswer});
     if(selectedAnswer === this.state.correctAnswer){
-      this.getData();
+      //this.getData();
       this.setState({currentPoints:
       this.state.currentPoints+1});
       console.log("correct answer"+selectedAnswer)
@@ -82,25 +89,50 @@ class Quiz extends Component<{},QuizState>{
     }
     else{
       this.setState({currentPoints:this.state.currentPoints+0});
-      console.log("incorrect"+selectedAnswer+" correct is"+this.state.correctAnswer);
+      console.log("incorrect"+selectedAnswer+" correct is"+this.state.correctAnswer+" id "+this.state.currentQuestion);
     }
     if(this.state.currentQuestion+1===this.state.questions.length){
       this.setState({finish:true});
     }
+
+    //this.handleOption(currentQuestion,selectedAnswer);
     
+  }
+  getPreviousQuestion=()=>{
+    let storedAnswer=localStorage.getItem(JSON.stringify(this.state.currentQuestion-1));
     
+    this.setState(prevState=>({
+      currentQuestion : prevState.currentQuestion-1,
+      correctAnswer : this.state.questions[prevState.currentQuestion-1].correct_answer,
+      userAnswer:storedAnswer
+    
+    }));
+    const incorrect_answers = this.state.questions[this.state.currentQuestion-1].incorrect_answers;
+    const correct_answer = this.state.questions[this.state.currentQuestion-1].correct_answer;
+    this.combineAllAnswers(incorrect_answers, correct_answer);
+  
+
   }
 
   getNextQuestion=()=>{
+    if(this.state.userAnswer === null){
+      window.alert("select the answer");
+      console.log("answer not selected");
+  }
+  else{
     
+    console.log("answer selected");
+    let storedAnswer=localStorage.getItem(JSON.stringify(this.state.currentQuestion+1));
     this.setState(prevState =>({
       currentQuestion : prevState.currentQuestion+1,
-      correctAnswer : this.state.questions[prevState.currentQuestion+1].correct_answer
+      correctAnswer : this.state.questions[prevState.currentQuestion+1].correct_answer,
+      userAnswer:storedAnswer
     }));
     const incorrect_answers = this.state.questions[this.state.currentQuestion+1].incorrect_answers;
     const correct_answer = this.state.questions[this.state.currentQuestion+1].correct_answer;
     this.combineAllAnswers(incorrect_answers, correct_answer);
-  };
+  }
+};
 
   render() {
     return (
@@ -129,7 +161,7 @@ class Quiz extends Component<{},QuizState>{
                             key={index}
                             name="answer"
                             value={ans}
-                            onChange={() => this.verifyAnswer(ans)}
+                            onChange={() => {this.verifyAnswer(ans);this.handleOption(this.state.currentQuestion,ans);}}
                             checked={this.state.userAnswer === ans}
                           />
                           {this.removeCharacters(ans)}
@@ -137,6 +169,11 @@ class Quiz extends Component<{},QuizState>{
                       ))}
                     </div>
                     <div>
+                      {this.state.currentQuestion >0 && (
+                        <button onClick={this.getPreviousQuestion}>Previous Question</button>
+                      )}
+                    
+                  
                       {this.state.currentQuestion < this.state.questions.length && (
                         <button onClick={this.getNextQuestion}>Next</button>
                       )}

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import questions from './questions.json';
+import questions from '../questions.json';
 
 interface Question {
   question: string;
